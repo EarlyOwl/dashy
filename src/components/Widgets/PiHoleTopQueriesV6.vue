@@ -56,6 +56,8 @@ export default {
         this.processData(topAds, topQueries);
       } catch (err) {
         this.error(`[Pi-hole] fetchData error: ${err.message}`);
+      } finally {
+        await this.deleteSession();
       }
     },
     /* Make POST request to local pi-hole instance for authentication */
@@ -122,6 +124,25 @@ export default {
         { id: '01', title: 'Top Ads Blocked', results: format(topAds) },
         { id: '02', title: 'Top Queries', results: format(topQueries) },
       ];
+    },
+    /* Make DELETE request to local pi-hole to delete API session */
+    async deleteSession() {
+      try {
+        await fetch(`${this.hostname}/api/auth`, {
+          method: 'DELETE',
+          headers: {
+            'X-FTL-SID': this.sid,
+            'X-FTL-CSRF': this.csrfToken,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+      } catch (_) {
+        /* Ignore errors on session delete */
+      } finally {
+        this.sid = null;
+        this.csrfToken = null;
+      }
     },
   },
 };

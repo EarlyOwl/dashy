@@ -58,6 +58,8 @@ export default {
         this.processData(history);
       } catch (err) {
         this.error(`[Pi-hole] fetchData error: ${err.message}`);
+      } finally {
+        await this.deleteSession();
       }
     },
     /* Make POST request to local pi-hole instance for authentication */
@@ -135,6 +137,25 @@ export default {
           xAxisMode: 'tick',
         },
       });
+    },
+    /* Make DELETE request to local pi-hole to delete API session */
+    async deleteSession() {
+      try {
+        await fetch(`${this.hostname}/api/auth`, {
+          method: 'DELETE',
+          headers: {
+            'X-FTL-SID': this.sid,
+            'X-FTL-CSRF': this.csrfToken,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+      } catch (_) {
+        /* Ignore errors on session delete */
+      } finally {
+        this.sid = null;
+        this.csrfToken = null;
+      }
     },
   },
 };
